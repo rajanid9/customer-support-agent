@@ -29,6 +29,20 @@ def test_get_edit_policy_reads_only_known_rule_files():
     assert is_error
 
 
+def test_provider_edit_summary_counts_rules_and_returns_policy_keys():
+    content, is_error = demo.summarize_provider_edits("PRV-201")
+
+    assert not is_error
+    summary = json.loads(content)
+    assert summary["claim_count"] == 5
+    assert summary["rule_counts"]["utilization"] == 2
+    assert summary["most_frequent_rule_keys"] == ["utilization"]
+    assert summary["rule_keys_to_read"] == [
+        "authorization", "coding_provider", "documentation", "utilization"
+    ]
+    assert all(not demo.get_edit_policy(key)[1] for key in summary["rule_keys_to_read"])
+
+
 def test_documentation_request_checks_claim_edit_and_disposition():
     content, is_error = demo.request_documentation(
         "CLM-1002", "CLM-1002-E01", "clinical_note"
@@ -87,3 +101,17 @@ def test_agentic_loop_returns_tool_results_to_model():
     assert len(client.calls) == 3
     assert client.calls[1]["messages"][-1]["content"][0]["tool_use_id"] == "t1"
     assert client.calls[2]["messages"][-1]["content"][0]["tool_use_id"] == "t2"
+
+
+def test_end_turn_returns_final_text_without_another_api_call():
+    client = FakeClient([
+        NS(stop_reason="end_turn", content=[text("Claim review complete.")]),
+        NS(stop_reason="tool_use", content=[tool_use(
+            "unused", "get_claim", {"claim_id": "CLM-1001"}
+        )]),
+    ])
+
+    result = demo.run_agent("Thanks, that is all.", client=client, verbose=False)
+
+    assert result == "Claim review complete."
+    assert len(client.calls) == 1

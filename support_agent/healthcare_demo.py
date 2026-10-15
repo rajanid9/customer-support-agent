@@ -2,6 +2,7 @@
 
 import json
 import uuid
+from collections import Counter
 from pathlib import Path
 
 import anthropic
@@ -29,6 +30,21 @@ REVIEW_TASKS = []
 DOCUMENTATION_REQUESTS = []
 
 TOOLS = [
+    {
+        "name": "summarize_provider_edits",
+        "description": (
+            "For a provider, scan all synthetic claims and count fired edit categories "
+            "and rule keys. Use this for questions about the most frequent edits; "
+            "then read each returned rule_key with get_edit_policy."
+        ),
+        "strict": True,
+        "input_schema": {
+            "type": "object",
+            "properties": {"provider_id": {"type": "string"}},
+            "required": ["provider_id"],
+            "additionalProperties": False,
+        },
+    },
     {
         "name": "get_claim",
         "description": "Retrieve one synthetic claim and its fired edits. Use before discussing a claim.",
@@ -104,6 +120,8 @@ TOOLS = [
 
 SYSTEM_PROMPT = """You are an administrative assistant for a synthetic claims-editing exercise.
 All records and policy files are fictional. Retrieve a claim before discussing it.
+For provider-level edit frequency questions, use summarize_provider_edits, then read
+each returned rule_key with get_edit_policy before explaining the rules.
 Use the provider lookup when a fired edit concerns provider configuration. Read the
 matching edit policy file before recommending a workflow. You may queue mock
 requests for missing documentation or human review, but must never decide medical
@@ -141,6 +159,39 @@ def get_provider(provider_id):
     if provider is None:
         return _error("not_found", f"No synthetic provider found for {provider_id}.")
     return _ok(provider)
+
+
+def summarize_provider_edits(provider_id):
+    if provider_id not in PROVIDERS_BY_ID:
+        return _error("not_found", f"No synthetic provider found for {provider_id}.")
+
+    provider_claims = [claim for claim in CLAIMS if claim["provider_id"] == provider_id]
+    rule_counts = Counter(
+        edit["rule_key"]
+        for claim in provider_claims
+        for edit in claim["edits_fired"]
+    )
+    category_counts = Counter(
+        edit["category"]
+        for claim in provider_claims
+        for edit in claim["edits_fired"]
+    )
+    highest_count = max(rule_counts.values(), default=0)
+    most_frequent = sorted(
+        rule_key for rule_key, count in rule_counts.items()
+        if count == highest_count
+    )
+
+    return _ok({
+        "provider_id": provider_id,
+        "claim_count": len(provider_claims),
+        "claim_ids": [claim["claim_id"] for claim in provider_claims],
+        "total_fired_edits": sum(rule_counts.values()),
+        "rule_counts": dict(sorted(rule_counts.items())),
+        "category_counts": dict(sorted(category_counts.items())),
+        "most_frequent_rule_keys": most_frequent,
+        "rule_keys_to_read": sorted(rule_counts),
+    })
 
 
 def get_edit_policy(rule_key):
@@ -191,6 +242,7 @@ def create_review_task(claim_id, edit_id, reason):
 
 
 HANDLERS = {
+    "summarize_provider_edits": summarize_provider_edits,
     "get_claim": get_claim,
     "get_provider": get_provider,
     "get_edit_policy": get_edit_policy,
