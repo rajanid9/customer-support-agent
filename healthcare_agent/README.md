@@ -7,8 +7,8 @@ This is a learning demo for tool use over synthetic claims. It is not a real cla
 - `claims.json` contains 30 synthetic claims. Each record has claim, member, and provider IDs; service details; a mock status; and an `edits_fired` array. The dataset contains 35 fired edits total.
 - `providers.json` contains six synthetic provider records. Claims refer to these records using `provider_id`.
 - `edit_rules/` contains five short Markdown workflow guides: `authorization`, `documentation`, `utilization`, `coding_provider`, and `coverage_demographics`.
-- `healthcare_demo.py` loads the JSON files relative to its own path, indexes claims and providers by ID, defines tool schemas and handlers, and runs the model/tool loop.
-- `tests/test_healthcare_demo.py` tests the JSON links, rule lookup, mock-action safeguards, provider counts, and loop behavior with a fake client.
+- `agent.py` loads the JSON files relative to its own path, indexes claims and providers by ID, defines tool schemas and handlers, and runs the model/tool loop.
+- `tests/test_agent.py` tests the JSON links, rule lookup, mock-action safeguards, provider counts, and loop behavior with a fake client.
 
 Each fired edit has an `edit_id`, `edit_code`, `policy_id`, `rule_key`, `category`, `disposition`, and explanatory note. `rule_key` connects an edit to a file in `edit_rules/`; `policy_id` is a fictional identifier for the sample.
 
@@ -52,8 +52,8 @@ The summary handler should report `utilization` as the top rule for `PRV-201`, w
 From the repository root:
 
 ```bash
-./.venv/bin/python -m support_agent.healthcare_demo
-./.venv/bin/python -m pytest tests/test_healthcare_demo.py -q
+./.venv/bin/python -m healthcare_agent.agent
+./.venv/bin/python -m pytest healthcare_agent/tests/test_agent.py -q
 ```
 
 The live demo needs `ANTHROPIC_API_KEY`. The tests use a fake client and do not make API calls. All claim IDs, member IDs, provider IDs, service codes, policy IDs, and policy content are fictional; do not use the sample rules for real claim decisions.

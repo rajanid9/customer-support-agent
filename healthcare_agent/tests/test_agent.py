@@ -3,7 +3,7 @@ from types import SimpleNamespace as NS
 
 import pytest
 
-from support_agent import healthcare_demo as demo
+from healthcare_agent import agent as demo
 
 
 @pytest.fixture(autouse=True)
