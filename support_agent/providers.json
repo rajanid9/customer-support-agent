@@ -1,0 +1,11 @@
+{
+  "data_notice": "Synthetic provider records for mock claims only. No real organizations or credentials are represented.",
+  "providers": [
+    {"provider_id":"PRV-201","display_name":"Sample Imaging Group A","specialty":"diagnostic_imaging","network_status":"in_network","credential_status":"verified","service_locations":["LOC-01","LOC-02"]},
+    {"provider_id":"PRV-202","display_name":"Sample Rehabilitation Clinic B","specialty":"rehabilitation","network_status":"in_network","credential_status":"verified","service_locations":["LOC-03"]},
+    {"provider_id":"PRV-203","display_name":"Sample Diagnostic Laboratory C","specialty":"diagnostic_laboratory","network_status":"in_network","credential_status":"needs_review","service_locations":["LOC-04"]},
+    {"provider_id":"PRV-204","display_name":"Sample Outpatient Center D","specialty":"outpatient_services","network_status":"unknown","credential_status":"pending","service_locations":["LOC-05","LOC-06"]},
+    {"provider_id":"PRV-205","display_name":"Sample Specialty Practice E","specialty":"multi_specialty","network_status":"in_network","credential_status":"verified","service_locations":["LOC-07"]},
+    {"provider_id":"PRV-206","display_name":"Sample Procedure Group F","specialty":"procedural_services","network_status":"out_of_network","credential_status":"needs_review","service_locations":["LOC-08"]}
+  ]
+}
