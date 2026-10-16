@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import argparse
 import asyncio
 import json
+import sys
 from collections.abc import Awaitable, Callable, Sequence
 from typing import TypeVar
 
@@ -195,6 +197,54 @@ def _payload(**values: object) -> str:
     return json.dumps(values, ensure_ascii=False, indent=2)
 
 
+def format_report(report: ResearchReport) -> str:
+    """Render a research report as readable Markdown for terminal output."""
+    status = "COMPLETE" if report.coverage_complete else "INCOMPLETE"
+    lines = [
+        f"# Research: {report.topic}",
+        "",
+        f"**Coverage:** {status}",
+        "",
+        "## Summary",
+        "",
+        report.summary,
+        "",
+        "## Subtopics",
+        "",
+    ]
+    lines.extend(f"- {subtopic}" for subtopic in report.subtopics)
+
+    lines.extend(["", "## Findings", ""])
+    lines.extend(f"- {finding}" for finding in report.findings)
+    if not report.findings:
+        lines.append("- No findings returned.")
+
+    lines.extend(["", "## Sources", ""])
+    if report.sources:
+        lines.extend(
+            f"- [{source.title}]({source.url}) — {source.note}"
+            for source in report.sources
+        )
+    else:
+        lines.append("- No sources returned.")
+
+    lines.extend(["", "## Coverage details", ""])
+    lines.append(
+        f"- Required coverage: {', '.join(report.coverage_requirements) or 'Not specified'}"
+    )
+    lines.append(
+        f"- Remaining gaps: {', '.join(report.coverage_gaps) or 'None'}"
+    )
+    lines.append(f"- Refinement rounds: {report.refinement_rounds}")
+
+    lines.extend(["", "## Limitations", ""])
+    if report.limitations:
+        lines.extend(f"- {limitation}" for limitation in report.limitations)
+    else:
+        lines.append("- None reported.")
+    return "\n".join(lines)
+
+
 async def run_research(
     topic: str,
     documents: Sequence[str] = (),
@@ -331,13 +381,19 @@ async def run_research(
 
 
 async def _main() -> None:
-    import sys
-
-    topic = " ".join(sys.argv[1:]).strip()
+    parser = argparse.ArgumentParser(description="Research a broad topic using a hub-and-spoke agent workflow.")
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="print the structured JSON report instead of readable Markdown",
+    )
+    parser.add_argument("topic", nargs="*", help="broad research topic")
+    args = parser.parse_args()
+    topic = " ".join(args.topic).strip()
     if not topic:
         topic = input("Research topic: ").strip()
     report = await run_research(topic)
-    print(report.model_dump_json(indent=2))
+    print(report.model_dump_json(indent=2) if args.json else format_report(report))
     if not report.coverage_complete:
         gaps = ", ".join(report.coverage_gaps) or "unspecified"
         print(

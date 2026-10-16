@@ -165,6 +165,9 @@ Set `ANTHROPIC_API_KEY` in the environment and run:
 ./.venv/bin/python -m multi_agent_research.agent "Renewable energy technologies"
 ```
 
+The CLI renders a readable Markdown-style report by default. Add `--json`
+before the topic to print structured JSON instead.
+
 Live results require valid SDK credentials and runtime access to the configured
 built-in web tools. Offline tests establish that the orchestration and coverage
 checks work; they do not verify live search accuracy or source availability.

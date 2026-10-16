@@ -91,11 +91,24 @@ echo
 ./.venv/bin/python -m multi_agent_research.agent "Renewable energy technologies"
 ```
 
+The command prints a readable Markdown-style report by default. To get
+machine-readable JSON instead, add `--json`:
+
+```bash
+./.venv/bin/python -m multi_agent_research.agent --json "Renewable energy technologies"
+```
+
+A captured live-run example is available at
+[`reports/renewable_energy_technologies_2026-10-15.md`](./reports/renewable_energy_technologies_2026-10-15.md).
+It is intentionally labeled incomplete and unverified, matching the run's
+coverage status and source limitations.
+
 You can pass documents directly in Python:
 
 ```python
 import asyncio
-from multi_agent_research.agent import run_research
+from IPython.display import Markdown, display
+from multi_agent_research.agent import format_report, run_research
 
 report = asyncio.run(
     run_research(
@@ -103,8 +116,11 @@ report = asyncio.run(
         documents=["Paste a report excerpt or document text here."],
     )
 )
-print(report.model_dump_json(indent=2))
+display(Markdown(format_report(report)))
 ```
+
+Use `report.model_dump_json(indent=2)` instead when you need machine-readable
+JSON in Python.
 
 The live result depends on model and search-tool availability. The offline test
 verifies orchestration and required output coverage, not the accuracy of live

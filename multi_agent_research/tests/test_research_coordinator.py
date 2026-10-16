@@ -15,6 +15,7 @@ from multi_agent_research.agent import (
     Source,
     Subtopic,
     WebFindings,
+    format_report,
     run_research,
 )
 
@@ -102,6 +103,12 @@ def test_renewable_energy_research_refines_gaps_and_covers_all_required_topics()
     for name in ENERGY_TOPICS:
         assert name in " ".join(report.subtopics).casefold()
         assert any(name in finding.casefold() for finding in report.findings)
+    rendered = format_report(report)
+    assert "# Research: Renewable energy technologies" in rendered
+    assert "**Coverage:** COMPLETE" in rendered
+    assert "## Findings" in rendered
+    assert "https://example.test/tidal" in rendered
+    assert "- Remaining gaps: None" in rendered
     assert agents.web_calls == 2
     assert agents.document_calls == 2
     assert agents.coverage_calls == 2
@@ -134,6 +141,9 @@ def test_refinement_limit_is_reported_as_incomplete_not_success():
     assert report.coverage_complete is False
     assert report.refinement_rounds == 0
     assert report.coverage_gaps == ["fusion", "tidal"]
+    rendered = format_report(report)
+    assert "**Coverage:** INCOMPLETE" in rendered
+    assert "- Remaining gaps: fusion, tidal" in rendered
 
 
 def test_empty_topic_is_rejected_before_agent_calls():
