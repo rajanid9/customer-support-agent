@@ -57,3 +57,31 @@ From the repository root:
 ```
 
 The live demo needs `ANTHROPIC_API_KEY`. The tests use a fake client and do not make API calls. All claim IDs, member IDs, provider IDs, service codes, policy IDs, and policy content are fictional; do not use the sample rules for real claim decisions.
+
+## Product Manager Scope
+
+You do not need to memorize the Python implementation to lead this lab. You
+should understand the workflow boundaries, define the intended administrative
+outcome, and require evidence that the safeguards work.
+
+- **User outcome:** Help an administrative reviewer find relevant synthetic
+  claim details and workflow guidance, then route missing documentation or
+  review needs appropriately.
+- **Success criteria:** Measure retrieval accuracy, correct mapping from edits
+  to workflow guides, usefulness of summaries, and correct routing of mock
+  follow-up tasks. Track unsupported coverage or medical-necessity conclusions
+  as critical failures.
+- **Boundaries:** This exercise uses fictional data and is not a claims
+  adjudication system. The agent must not decide medical necessity or coverage,
+  approve or deny claims, or modify claim status. Human review remains necessary
+  for unresolved policy questions.
+- **Quality checks:** Test missing records, invalid claim/edit relationships,
+  documentation requests for ineligible edits, provider-level counts, and
+  failures to retrieve rule guidance. Confirm all queued actions are clearly
+  mock actions.
+- **Operational trade-offs:** Decide how much explanation reviewers need,
+  when to escalate, and what response time is acceptable. Any real deployment
+  would need domain, privacy, security, compliance, and clinical/policy review.
+
+The data and workflow rules in this package are fictional training material;
+passing its tests does not validate real claims-processing behavior.

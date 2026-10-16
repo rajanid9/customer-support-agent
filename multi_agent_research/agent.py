@@ -10,7 +10,7 @@ from typing import TypeVar
 from claude_agent_sdk import ClaudeAgentOptions, ResultMessage, query
 from pydantic import BaseModel, Field
 
-MODEL = "claude-sonnet-4-5"
+MODEL = "sonnet"
 MIN_SUBTOPICS = 5
 MAX_REFINEMENT_ROUNDS = 2
 

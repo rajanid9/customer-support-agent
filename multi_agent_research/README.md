@@ -8,7 +8,9 @@ coverage gaps for another pass.
 This lab uses the Claude Agent SDK. The offline tests use scripted agents, so
 you can learn and verify the orchestration without credentials or live search.
 The live Web Search specialist requires Claude Code/Agent SDK access to the
-built-in `WebSearch` and `WebFetch` tools.
+built-in `WebSearch` and `WebFetch` tools. The SDK is configured with its
+`sonnet` model alias, so the runtime resolves a Sonnet model available to your
+account rather than requiring a hard-coded model identifier.
 
 ## Step 1 — Inspect the contracts
 
@@ -76,10 +78,13 @@ actually passed into the document-analysis prompt.
 
 ## Step 8 — Run live research
 
-Set `ANTHROPIC_API_KEY` in your shell, then start the coordinator:
+Set `ANTHROPIC_API_KEY` in your shell, then start the coordinator. In zsh, you
+can enter the key without echoing it:
 
 ```bash
-export ANTHROPIC_API_KEY="your-key"
+read -s "ANTHROPIC_API_KEY?Paste your API key (input hidden): "
+export ANTHROPIC_API_KEY
+echo
 ./.venv/bin/python -m multi_agent_research.agent "Renewable energy technologies"
 ```
 
@@ -101,3 +106,32 @@ print(report.model_dump_json(indent=2))
 The live result depends on model and search-tool availability. The offline test
 verifies orchestration and required output coverage, not the accuracy of live
 web sources.
+
+## Product Manager Scope
+
+You do not need to memorize the Python implementation to lead this lab. You
+should be able to explain the research outcome, define what complete coverage
+means, and understand when the system must report uncertainty instead of
+claiming success.
+
+- **User outcome:** Deliver a useful, source-backed overview of a broad topic
+  without silently omitting important areas.
+- **Success criteria:** For the renewable-energy benchmark, verify coverage of
+  solar, wind, geothermal, tidal, biomass, and fusion. Also evaluate source
+  quality, factual support, clarity of caveats, and whether remaining gaps are
+  visible in the final report. Fusion must be described as emerging rather than
+  a currently deployed renewable source.
+- **Boundaries:** Distinguish sourced facts from uncertainty. Do not invent
+  citations or pretend that source excerpts are full documents. If coverage is
+  inadequate after the refinement limit, report an incomplete result with its
+  gaps.
+- **Quality checks:** Test broad versus narrow topics, missing subtopics,
+  unsupported findings, weak sources, failed search, invalid gap identifiers,
+  and exhaustion of refinement rounds. The offline tests check orchestration
+  and context passing; they do not prove live research accuracy.
+- **Operational trade-offs:** Set acceptable latency, API/search cost, source
+  freshness, and number of refinement rounds. Consider when a human researcher
+  should review high-impact conclusions.
+
+Before production use, define source-quality standards, evaluation datasets,
+monitoring, and review requirements appropriate to the research domain.

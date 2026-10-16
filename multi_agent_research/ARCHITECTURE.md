@@ -68,6 +68,8 @@ async for message in query(prompt=prompt, options=options):
 
 In this configuration:
 
+- `MODEL` is set to the SDK's `"sonnet"` alias so the runtime resolves a Sonnet
+  model available to the authenticated account.
 - `system_prompt` sets the role's instructions.
 - `allowed_tools` grants the Web Search specialist access to search/fetch
   tools. The prompt encourages tool use, but does not enable tools by itself.
