@@ -19,6 +19,9 @@ handoff: `ResearchPlan`, `WebFindings`, `DocumentAnalysis`, `CoverageReview`,
 and `ResearchReport`. Structured handoffs make it possible to validate agent
 outputs and test the workflow without relying on prose parsing.
 
+For certification and product-manager practice, see
+[`TEST_PREP.md`](./TEST_PREP.md).
+
 For renewable-energy topics, the coordinator has six required breadth checks:
 solar, wind, geothermal, tidal, biomass, and fusion. Fusion is included because
 the exercise explicitly asks for it; the final report should distinguish it
