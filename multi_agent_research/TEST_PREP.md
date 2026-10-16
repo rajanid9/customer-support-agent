@@ -225,3 +225,94 @@ Write a one-page acceptance checklist for a research workflow. Include:
 After drafting the checklist, ask: **Could an engineer turn each requirement
 into a test or metric, and would a user know when the report is not ready to
 support a decision?**
+
+## Sample Acceptance Criteria Checklist
+
+Use this as a starting point for the renewable-energy research lab. Adjust the
+thresholds and standards with subject-matter experts before using the system
+for real decisions.
+
+### Scope and coverage
+
+- [ ] The plan has at least five distinct subtopics and represents the breadth
+  of the user's topic.
+- [ ] For the renewable-energy benchmark, the final report addresses solar,
+  wind, geothermal, tidal, biomass, and fusion.
+- [ ] Each required area has at least one relevant finding and a source that
+  supports that finding; merely naming a topic does not count as coverage.
+- [ ] Fusion is identified as an emerging technology, not a currently deployed
+  renewable source.
+- [ ] If a required area is unsupported after the refinement limit, the report
+  is marked incomplete and names every remaining gap.
+
+### Evidence and quality
+
+- [ ] Key factual findings include source titles and working URLs.
+- [ ] Sources meet an agreed credibility and recency standard for the domain.
+- [ ] Important claims can be traced to the source supporting them.
+- [ ] Uncertainty, conflicting evidence, and limitations are disclosed.
+- [ ] The system does not invent sources, citations, or document contents.
+
+### Orchestration and recovery
+
+- [ ] Each specialist receives the topic, assigned subtopics, objectives, and
+  the relevant prior results needed for its task.
+- [ ] Document Analysis receives user-provided documents and Web Search
+  findings as explicit context.
+- [ ] A coverage gap triggers another targeted delegation within the configured
+  round limit.
+- [ ] Search failures return the failure type, attempted query, partial
+  findings/sources, and a useful recovery signal when available.
+- [ ] The workflow stops at the configured refinement limit and does not
+  describe an incomplete report as complete.
+
+### Operational readiness
+
+- [ ] Define a target maximum end-to-end latency for a typical research task.
+- [ ] Define an acceptable maximum API/search cost per report.
+- [ ] Track model/tool errors, retries, incomplete reports, and coverage gaps.
+- [ ] Define when high-impact findings require human review before use.
+- [ ] Confirm credentials are handled securely and never included in prompts,
+  reports, logs, or version control.
+
+### Evaluation plan
+
+- [ ] Maintain representative test topics, including broad topics and
+  deliberately difficult or ambiguous requests.
+- [ ] Test omitted subtopics, weak or conflicting evidence, tool timeout,
+  malformed structured results, and refinement exhaustion.
+- [ ] Run deterministic offline tests for orchestration and context passing.
+- [ ] Separately evaluate live research for source quality and factual
+  accuracy; passing offline orchestration tests is not evidence of factual
+  correctness.
+- [ ] Review results with subject-matter experts and revise the criteria when
+  the intended decision or user need changes.
+
+## Recommended Learning Resources
+
+These official Claude/Anthropic resources align with the topics above. Start
+with evaluation and success criteria, then study the SDK and agent behavior.
+
+1. [Define success criteria and build evaluations](https://platform.claude.com/docs/en/test-and-evaluate/develop-tests) —
+   turn product goals into measurable checks and evaluations.
+2. [Prompt engineering overview](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/overview) —
+   understand when prompt changes help and why evaluation should come first.
+3. [Prompting best practices](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices) —
+   improve instructions, examples, tool guidance, and agent prompts.
+4. [Claude Agent SDK overview](https://code.claude.com/docs/en/agent-sdk/overview)
+   and [Quickstart](https://code.claude.com/docs/en/agent-sdk/quickstart) —
+   understand SDK capabilities, configuration, and execution.
+5. [Subagents in the SDK](https://code.claude.com/docs/en/agent-sdk/subagents) —
+   learn the SDK's named subagent feature. This lab currently makes separate
+   SDK calls per role from Python rather than using SDK-managed subagent
+   spawning.
+6. [Tool use with Claude](https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview) —
+   distinguish tool instructions in prompts from tool availability and
+   execution configuration.
+7. [Structured outputs](https://platform.claude.com/docs/en/build-with-claude/structured-outputs) —
+   learn how schema-constrained outputs help downstream validation and
+   orchestration.
+8. [Building effective agents](https://www.anthropic.com/engineering/building-effective-agents) —
+   consider workflow-versus-agent design and trade-offs in complexity,
+   performance, latency, and cost. Treat it as architectural perspective and
+   pair it with current SDK documentation.

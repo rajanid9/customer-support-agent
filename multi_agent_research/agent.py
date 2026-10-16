@@ -339,10 +339,13 @@ async def _main() -> None:
     report = await run_research(topic)
     print(report.model_dump_json(indent=2))
     if not report.coverage_complete:
-        raise ResearchError(
-            "The report is incomplete after the configured refinement rounds; "
-            "review the coverage gaps and increase the round limit if appropriate."
+        gaps = ", ".join(report.coverage_gaps) or "unspecified"
+        print(
+            f"Research finished with incomplete coverage after "
+            f"{report.refinement_rounds} refinement rounds. Remaining gaps: {gaps}.",
+            file=sys.stderr,
         )
+        raise SystemExit(2)
 
 
 if __name__ == "__main__":
