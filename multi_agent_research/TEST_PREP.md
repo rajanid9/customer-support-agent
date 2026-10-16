@@ -179,3 +179,49 @@ checking source quality and coverage, and balancing user value against latency,
 cost, and operational risk. Understanding the role of prompts, tool
 permissions, structured handoffs, and refinement helps the PM review the
 system and work effectively with engineering.
+
+## Personal Reflection: What to Strengthen Next
+
+### What is already clear
+
+- Prompts guide agent behavior, while tool permissions determine which tools a
+  specialist can use.
+- Subagents need explicit context from the coordinator; they should not be
+  assumed to inherit another agent's conversation history.
+- Coverage gaps should trigger bounded refinement, and unresolved gaps should
+  be reported honestly instead of being presented as success.
+
+### Skills to practice
+
+1. **Make acceptance criteria measurable.** Instead of “cover every area,”
+   specify that each required topic needs a relevant finding and traceable
+   source. If any are missing, the report must identify the gap and be marked
+   incomplete.
+2. **Separate quality from operational metrics.** Coverage, decomposition,
+   source quality, and unsupported-claim rate measure answer quality. Latency,
+   cost per report, and tool failure rate measure operational performance.
+3. **Define source-quality standards.** Specify expectations for source
+   credibility, freshness, evidence links, and how to disclose conflicting or
+   uncertain evidence.
+4. **Specify recovery context.** On failure, return the failure type, attempted
+   query, partial findings and sources, and a suggested next step so the
+   coordinator can choose whether to retry, delegate differently, or report a
+   gap.
+5. **Connect system limits to user experience.** Set a refinement-round or
+   budget limit, then state what users see when that limit is reached:
+   incomplete status, remaining gaps, and any human-review recommendation.
+
+### Reflection exercise
+
+Write a one-page acceptance checklist for a research workflow. Include:
+
+- Required topic coverage and what evidence counts for each topic.
+- Source quality and freshness expectations.
+- How uncertainty, conflicting evidence, and missing sources are reported.
+- Behavior after a tool failure and after refinement is exhausted.
+- Maximum refinement rounds, latency target, and cost budget.
+- A test or metric that verifies each requirement.
+
+After drafting the checklist, ask: **Could an engineer turn each requirement
+into a test or metric, and would a user know when the report is not ready to
+support a decision?**
