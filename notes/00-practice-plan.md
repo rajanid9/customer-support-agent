@@ -1,34 +1,37 @@
 # Agent Builder Practice Plan
 
 **Started:** 2026-11-03, after passing Claude Certified Architect – Foundations
-**Format:** one 30–60 minute exercise a day, built on this repo, test-first
+**Format:** one 30–60 minute exercise a day, test-first
+**Capstone:** [Claim Edit Insights Agent](capstone-claim-insights-agent.md)
 
 ---
 
 ## Goal
 
-Understand **end to end** how an agent is built, orchestrated, enforced, tested and guarded, well enough to **build a new agent from scratch with Claude Code** and enforce guardrails, tests and gate checks the whole way through.
+Understand **end to end** how an agent is built, orchestrated, enforced, tested and guarded, well enough to **build the capstone from scratch with Claude Code** and enforce guardrails, tests and gate checks the whole way through.
+
+Every day below practices **one piece of the capstone** at small scale, so by the capstone you're putting together parts you've already built once.
 
 ## The two layers of guardrails
 
 | | **Layer 1: Runtime guardrails** | **Layer 2: Build-time gates** |
 |---|---|---|
-| **Protects against** | The agent doing something wrong **for a customer** | Claude Code (the builder) writing something wrong **into the codebase** |
-| **Example failure** | Refunds $749, leaks a card number, loops forever | Deletes a test to make it pass, skips validation, commits red code |
-| **Enforced by** | Schemas, handler checks, policy code, escalation, max turns, evals | CLAUDE.md, permissions, hooks, pre-commit, CI |
+| **Protects against** | The agent doing something wrong (wrong numbers, false patterns, accusations) | Claude Code (the builder) writing something wrong into the codebase |
+| **Example failure** | Makes up a percentage, calls n=3 "a trend," follows an instruction hidden in a note | Deletes a test to make it pass, edits the eval answers, commits red code |
+| **Enforced by** | Schemas, handler checks, number checker, statistical rules, output checks, evals | CLAUDE.md, permissions, hooks, pre-commit, CI |
 
 > **Prompts ask; code, hooks and CI enforce.** The same rule applies at both layers.
 
 ```
  BUILD TIME (Claude Code)                 RUN TIME (the agent)
  ────────────────────────                 ────────────────────
- CLAUDE.md       → conventions            System prompt   → role + policy
- Permissions     → what it may touch      Tool schemas    → shape (strict)
- PreToolUse hook → block bad edits        Handler checks  → meaning + policy
- Stop hook       → tests must be green    Agent loop      → max turns, stop reasons
- Pre-commit      → lint + tests           Output guard    → PII, format
- CI (GitHub)     → gate before merge      Escalation      → human in the loop
-                                          Evals           → measure behavior
+ CLAUDE.md       → conventions            System prompt    → role + wording policy
+ Permissions     → what it may touch      Tool schemas     → shape (strict enums)
+ PreToolUse hook → block bad edits        Handler checks   → meaning, ranges, small groups
+ Stop hook       → tests must be green    Agent loop       → max turns, query budget
+ Pre-commit      → lint + tests           Number checker   → every number traced
+ CI (GitHub)     → gate before merge      Output checks    → wording, format
+                                          Evals            → measure behavior
 ```
 
 ---
@@ -36,63 +39,80 @@ Understand **end to end** how an agent is built, orchestrated, enforced, tested 
 ## Plan
 
 Status: ✅ done · 🔜 next · ⬜ not started
+**Capstone link** = the part of the capstone the day prepares you for.
+**Where:** Weeks 1–3 use this repo's order data (simple domain, fast feedback). Week 4 moves to synthetic claims data, so the capstone domain is familiar before C1.
 
 ### Week 1: Tools + build-time gates
-| Day | Exercise | Layer | Done when | Status |
+*By the end of the week, every later exercise is built behind real gates.*
+
+| Day | Exercise | Capstone link | Done when | Status |
 |---|---|---|---|---|
-| 1 | Strict tool schemas + format validation in code (`list_orders`, `_check_id`) | Runtime | Malformed IDs return `validation` errors; 27 tests green · [notes](day-01-strict-schemas-and-validation.md) | ✅ |
-| 2 | Structured errors + retries: transient failures `retryable: true`, policy errors never retried | Runtime | A fake timeout is retried and recovers; a policy error is escalated, not retried | 🔜 |
-| 3 | **Claude Code Stop hook** that runs pytest, so the session can't finish with red tests | Build | Breaking a test makes the hook block the session from finishing | ⬜ |
-| 4 | **PreToolUse hook**: block edits to `.env` and test files that would weaken assertions | Build | The hook blocks the edit and explains why | ⬜ |
-| 5 | **Pre-commit + GitHub Actions CI**: tests and lint run on every push and PR | Build | A PR with a failing test can't be merged | ⬜ |
-| 6–7 | **Mini-project:** end-to-end refund flow built behind the gates from days 3–5 | Both | End-to-end test green, CI green | ⬜ |
+| 1 | Strict tool schemas + format validation in code (`list_orders`, `_check_id`) | ID checks on `get_claim` / `get_provider` | Malformed IDs return `validation` errors · [notes](day-01-strict-schemas-and-validation.md) | ✅ |
+| 2 | Structured errors + retries: a transient failure is `retryable: true`; validation/policy errors are not | Query timeouts, bad filters | A fake timeout is retried and recovers; a validation error is never retried | 🔜 |
+| 3 | **Stop hook**: Claude Code can't finish while pytest is red | Stop hook | Breaking a test makes the hook block the session from finishing | ⬜ |
+| 4 | **PreToolUse hook**: protect `.env` and a `golden/` folder from edits | Protecting the planted answers and evals | The hook blocks the edit and explains why | ⬜ |
+| 5 | **Pre-commit + GitHub Actions CI** | CI gate | A PR with a failing test can't be merged | ⬜ |
+| 6 | **Read-only query tool**: `query_metric(metric enum, group_by enum, date_range)` over orders, calculated in Python; a test that no tool writes anything | `query_metric` + "read-only" test | Unknown metric → validation error; read-only test passes | ⬜ |
+| 7 | **Mini-project:** "Why was refund R blocked?" Rebuild the story from the refund/escalation records, with the policy rule cited | Claim explainer | The explanation names the rule and the evidence; test green, CI green | ⬜ |
 
-### Week 2: Agent loop + orchestration
-| Day | Exercise | Done when | Status |
-|---|---|---|---|
-| 8 | Hand-written agent loop: `stop_reason` handling, max-iteration guard | The loop can't run forever; every stop reason is handled | ⬜ |
-| 9 | Context management: trim or summarize old turns past a token budget | A 30-turn conversation stays under budget | ⬜ |
-| 10 | Structured final output (Pydantic) with validation, plus one repair retry | Invalid output is repaired once, then escalated | ⬜ |
-| 11 | Subagent: a coordinator hands a scoped task to a "policy research" subagent | The subagent sees only the context it needs | ⬜ |
-| 12 | Parallel subagents + merging results, with sources kept | The merged answer cites which subagent each part came from | ⬜ |
-| 13 | Failure handling: a subagent times out and the coordinator degrades gracefully | Partial answer plus a flag saying what's missing | ⬜ |
-| 14 | Compare the hand-written loop with the Tool Runner / Agent SDK | Tradeoffs written up in notes | ⬜ |
+✅ **Week 1 check:** you can design a tool, enforce its inputs, and **prove** Claude Code can't merge red code.
 
-### Week 3: MCP
-| Day | Exercise | Done when | Status |
-|---|---|---|---|
-| 15 | MCP server (Python `mcp` SDK) exposing the order tools | Works in MCP Inspector | ⬜ |
-| 16 | Add **resources** (refund policy) and a **prompt** template | Readable from Claude Code | ⬜ |
-| 17 | Register the server in `.mcp.json` and use it from Claude Code | Claude Code calls your tool | ⬜ |
-| 18 | Auth: API key from env, fail closed, no hardcoded secrets | Missing key → clean startup failure | ⬜ |
-| 19 | The agent becomes an MCP client, replacing its local tools | Same tests pass over MCP | ⬜ |
-| 20–21 | **Mini-project:** ticketing MCP server (create, update, escalate) | The agent escalates a ticket end to end | ⬜ |
+### Week 2: Numbers you can trust + explainability
+*The core of the capstone: reports where every number is traceable and every pattern is real.*
 
-### Week 4: Runtime guardrails + evals
-| Day | Exercise | Done when | Status |
-|---|---|---|---|
-| 22 | Input guard: prompt injection and off-topic requests | 10 adversarial prompts are blocked or deflected | ⬜ |
-| 23 | Output guard: PII redaction (cards, SSNs) | Redaction tests pass | ⬜ |
-| 24 | Approval gate: high-value actions pause for a human | Refunds over $X return `pending_approval` | ⬜ |
-| 25 | Escalation triggers + a structured handoff payload | The handoff validates against its schema | ⬜ |
-| 26 | Audit log: every tool call recorded with its input, result and decision | The log reconstructs a full conversation | ⬜ |
-| 27 | Eval harness: 20 golden cases (correctness, safety, escalation) | Scored report | ⬜ |
-| 28 | Red-team your own agent and fix the top 3 issues | Eval score improves | ⬜ |
+| Day | Exercise | Capstone link | Done when | Status |
+|---|---|---|---|---|
+| 8 | **Synthetic data generator** with a fixed seed: ~500 orders, **planted patterns + decoys**, answers saved to `golden/` | Data generator + ground truth | Same seed → identical data; planted answers recorded | ⬜ |
+| 9 | Hand-written agent loop: every `stop_reason` handled, max turns, **query budget** | The agent's loop | The loop stops on budget; every stop reason has a test | ⬜ |
+| 10 | Structured output with Pydantic (`Lead`, `Explanation`) + one repair retry on invalid output | Output schemas | Invalid output is repaired once, otherwise flagged | ⬜ |
+| 11 | **Number tracing**: every tool result gets a `query_id`; a **number checker in code** checks each number in a report | Number checker ⭐ | A report with a made-up number is rejected | ⬜ |
+| 12 | **Statistical rules for patterns in code**: minimum n, deviation from normal, minimum change | `detect_anomalies` | Planted patterns are flagged; decoys aren't | ⬜ |
+| 13 | **Explainability**: rebuild a timeline from an event log; the same facts written for 2 different readers | Timeline + readers | Both versions contain the same facts and citations | ⬜ |
+| 14 | **Mini-project:** "Order insights" agent: explain one order + find the planted patterns in your synthetic data | Mode 1 + Mode 2 | Finds ≥ 2/3 planted patterns, 0 decoys, numbers 100% traced | ⬜ |
 
-### Capstone: build a new agent from scratch with Claude Code
-| Step | What | Done when | Status |
-|---|---|---|---|
-| C1 | New repo. Write **gates first**: CLAUDE.md, Stop/PreToolUse hooks, CI, eval cases | Gates block a deliberately bad change before any agent code exists | ⬜ |
-| C2 | Design: tool specs, policies, escalation matrix, failure modes | Design doc reviewed | ⬜ |
-| C3–C4 | Claude Code builds the agent **behind the gates** | CI green, evals passing | ⬜ |
-| C5 | Red-team, fix, write up what the gates caught | Retrospective in notes | ⬜ |
+✅ **Week 2 check:** you can build a single agent whose reports are **checked by code**, not just trusted.
+
+### Week 3: Orchestration + MCP
+| Day | Exercise | Capstone link | Done when | Status |
+|---|---|---|---|---|
+| 15 | **Subagent**: a coordinator hands a scoped question to an analyst subagent | Analyst subagent | The subagent sees only its task + tools; the result comes back structured | ⬜ |
+| 16 | Parallel subagents (analyst + policy explainer) + merging results with `query_id`s kept | Coordinator merge | The merged report passes the number checker | ⬜ |
+| 17 | Failure handling: a subagent times out → partial report with caveats | Partial reports | The report says what's missing; nothing is made up | ⬜ |
+| 18 | **MCP server** (Python `mcp` SDK) exposing your read-only query tools | `claims-warehouse` server | Works in MCP Inspector | ⬜ |
+| 19 | MCP **resources**: policy docs with citable sections | `policy-library` server | The agent cites `policy §section` from a resource | ⬜ |
+| 20 | Register the servers in `.mcp.json` (Claude Code) + the agent as an MCP client; API key from env, fail closed | Wiring + auth | The same tests pass over MCP; a missing key → clean failure | ⬜ |
+| 21 | **Mini-project:** move the Week 2 agent onto MCP + subagents | The capstone's structure | All Week 2 tests and evals still pass | ⬜ |
+
+✅ **Week 3 check:** you can split an agent into coordinator, subagents and MCP servers **without losing the guardrails**.
+
+### Week 4: Runtime guardrails + evals (on synthetic claims data)
+| Day | Exercise | Capstone link | Done when | Status |
+|---|---|---|---|---|
+| 22 | Move to claims: extend [healthcare_agent](../healthcare_agent/) data with history + appeals + 2 planted patterns | The capstone domain | The generator creates claims with known patterns | ⬜ |
+| 23 | **Prompt injection in the data**: an instruction hidden in a claim note is treated as data | Injection defense | 5 injection cases resisted, with tests | ⬜ |
+| 24 | **Output checks**: banned accusatory wording + small-group hiding (n < 11) | Wording policy + privacy | Report with "fraud" → rewritten or rejected; small groups never shown | ⬜ |
+| 25 | **Audit log** + **draft investigation ticket** that needs a human's approval | Accountability + human in the loop | The log rebuilds a full run; tickets stay `draft` until approved | ⬜ |
+| 26 | **Eval harness**: golden cases scored on patterns found, decoys reported, number accuracy, citations | Eval suite | Scored report produced | ⬜ |
+| 27 | **Evals in CI** with thresholds; also when to use an LLM judge (explanation quality) vs a code check (numbers) | Eval gate | CI fails when an eval score drops below its threshold | ⬜ |
+| 28 | **Red-team** ("prove this provider is committing fraud," n=3 provider, injected note), fix the top 3; **capstone readiness check** | C5 rehearsal | Every guardrail has a test that once failed (red → green) | ⬜ |
+
+✅ **Week 4 check:** you can show **with evidence** that the agent is safe, accurate and auditable.
+
+### Capstone: Claim Edit Insights Agent ([design](capstone-claim-insights-agent.md))
+| Step | What | Built on | Done when | Status |
+|---|---|---|---|---|
+| C1 | New repo: data generator + ground truth, golden evals, CLAUDE.md, hooks, CI. **Gates first.** | Days 3–5, 8, 26–27 | Gates block a deliberately bad change before any agent code exists | ⬜ |
+| C2 | Design review: metric list, pattern rules, schemas, wording policy | Days 6, 10, 12, 24 | Every tool, schema and threshold is decided | ⬜ |
+| C3 | `claims-warehouse` MCP server + claim explainer + number checker | Days 7, 11, 13, 18–20 | Explanations ≥ 95% correct; numbers 100% traced | ⬜ |
+| C4 | Pattern investigator: coordinator + subagents, leads report, ticket drafts | Days 12, 14–17, 25 | ≥ 4/5 planted patterns found, 0 decoys | ⬜ |
+| C5 | Red-team, fix, retrospective on what the gates caught | Days 23, 28 | All eval targets met; write-up done | ⬜ |
 
 ---
 
 ## How each day works
 
 1. **Start:** say "Day N" → a new branch `practice/day-NN` is created from `master`
-2. **Concept:** a short explanation of the idea behind the day
+2. **Concept:** a short explanation, including **how it connects to the capstone**
 3. **Build:** tests are written first (red), then you write the code until they pass (green)
 4. **Check:** the whole test suite must pass, not just the day's tests
 5. **Quiz:** answer in your own words
