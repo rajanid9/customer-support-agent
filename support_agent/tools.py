@@ -12,6 +12,7 @@ Exam concepts shown here:
 """
 
 import json
+import re
 import uuid
 
 from . import data
@@ -50,6 +51,22 @@ TOOLS = [
                 "customer_id": {"type": "string", "description": "Owner's customer id, e.g. C001"},
             },
             "required": ["order_id", "customer_id"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "list_orders",
+        "description": (
+            "List all orders for a given customer optionally filtered by status. Use this when the customer doesnt know their order Id (e.g. 'my recent order','what's still shipping?'). Requires the customer_id (format C###). If you only have an email, call lookup_customer first. If you already have an order_id, use get_order instead."
+        ),
+        "strict": True,
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "customer_id": {"type": "string", "description": "Customer id, e.g. C001"},
+                "status": {"type": "string", "enum": ["processing","shipped","delivered","cancelled"], "description": "Optional filter. Omit to return  orders in every status."},
+            },
+            "required": ["customer_id"],
             "additionalProperties": False,
         },
     },
@@ -110,6 +127,11 @@ def _error(category: str, message: str, retryable: bool) -> tuple[str, bool]:
     # category: validation | not_found | permission | policy | transient
     return json.dumps({"error_category": category, "message": message, "retryable": retryable}), True
 
+def _check_id(value:str, pattern:str, example:str, hint:str = "") -> tuple[str, bool] | None:
+    """Deterministic format check for IDs. Returns a validation error, or None if the id is valid."""
+    if re.fullmatch(pattern, value):
+        return None
+    return _error("validation", f"'{value}' is not a valid id; expected format like {example}. {hint}".strip(), False)
 
 def lookup_customer(email: str) -> tuple[str, bool]:
     for c in data.CUSTOMERS.values():
@@ -119,6 +141,8 @@ def lookup_customer(email: str) -> tuple[str, bool]:
 
 
 def get_order(order_id: str, customer_id: str) -> tuple[str, bool]:
+    if err := _check_id(order_id, r"O\d{4}","O1001 (O#####)"):
+        return err
     order = data.ORDERS.get(order_id)
     if order is None:
         return _error("not_found", f"Order {order_id} does not exist.", False)
@@ -127,7 +151,23 @@ def get_order(order_id: str, customer_id: str) -> tuple[str, bool]:
     return _ok(order)
 
 
+def list_orders(customer_id: str, status: str | None = None) -> tuple[str, bool]:
+    if err := _check_id(customer_id, r"C\d{3}","C1001", "If you only have an email, call lookup_customer first."):
+        return err
+    orders = [
+        order
+        for order in data.ORDERS.values()
+        if order["customer_id"] == customer_id
+        and (status is None or order["status"] == status)
+    ]
+    return _ok({"orders": orders})
+
+
 def issue_refund(order_id: str, customer_id: str, reason: str) -> tuple[str, bool]:
+    if err := _check_id(order_id, r"O\d{4}","O1001 (O#####)"):
+        return err
+    if err := _check_id(customer_id, r"C\d{3}","C1001", "If you only have an email, call lookup_customer first."):
+        return err
     order = data.ORDERS.get(order_id)
     if order is None or order["customer_id"] != customer_id:
         return _error("not_found", f"Order {order_id} not found for {customer_id}.", False)
@@ -156,6 +196,7 @@ def escalate_to_human(customer_id: str, reason: str, summary: str) -> tuple[str,
 HANDLERS = {
     "lookup_customer": lookup_customer,
     "get_order": get_order,
+    "list_orders": list_orders,
     "issue_refund": issue_refund,
     "escalate_to_human": escalate_to_human,
 }
